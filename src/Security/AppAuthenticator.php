@@ -2,6 +2,7 @@
 
 namespace App\Security;
 
+use Symfony\Component\HttpFoundation\Response;
 use App\Entity\Admin;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -39,13 +40,13 @@ class AppAuthenticator extends AbstractFormLoginAuthenticator implements Passwor
         $this->passwordEncoder = $passwordEncoder;
     }
 
-    public function supports(Request $request)
+    public function supports(Request $request): bool
     {
         return self::LOGIN_ROUTE === $request->attributes->get('_route')
             && $request->isMethod('POST');
     }
 
-    public function getCredentials(Request $request)
+    public function getCredentials(Request $request): mixed
     {
         $credentials = [
             'username' => $request->request->get('username'),
@@ -60,7 +61,7 @@ class AppAuthenticator extends AbstractFormLoginAuthenticator implements Passwor
         return $credentials;
     }
 
-    public function getUser($credentials, UserProviderInterface $userProvider)
+    public function getUser($credentials, UserProviderInterface $userProvider): ?UserInterface
     {
         $token = new CsrfToken('authenticate', $credentials['csrf_token']);
         if (!$this->csrfTokenManager->isTokenValid($token)) {
@@ -76,7 +77,7 @@ class AppAuthenticator extends AbstractFormLoginAuthenticator implements Passwor
         return $user;
     }
 
-    public function checkCredentials($credentials, UserInterface $user)
+    public function checkCredentials($credentials, UserInterface $user): bool
     {
         return $this->passwordEncoder->isPasswordValid($user, $credentials['password']);
     }
@@ -89,7 +90,7 @@ class AppAuthenticator extends AbstractFormLoginAuthenticator implements Passwor
         return $credentials['password'];
     }
 
-    public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $providerKey)
+    public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $providerKey): ?Response
     {
         if ($targetPath = $this->getTargetPath($request->getSession(), $providerKey)) {
             return new RedirectResponse($targetPath);
@@ -98,7 +99,7 @@ class AppAuthenticator extends AbstractFormLoginAuthenticator implements Passwor
         return new RedirectResponse($this->urlGenerator->generate('admin'));
     }
 
-    protected function getLoginUrl()
+    protected function getLoginUrl(): string
     {
         return $this->urlGenerator->generate(self::LOGIN_ROUTE);
     }
